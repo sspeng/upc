@@ -21,7 +21,7 @@ int main(){
     if(MYTHREAD == 0)
         printf("N %d, no_elements %d, N_padded %d\n", N, no_elements, N_padded);
 
-	shared [BLOCKSIZE] int* T  = (shared [BLOCKSIZE] int*) upc_all_alloc( M*(N_padded+1)/THREADS, sizeof(int)*(N_padded+1)/THREADS);
+	shared [BLOCKSIZE] int* T  = (shared [BLOCKSIZE] int*) upc_all_alloc( M*(N_padded+1)/BLOCKSIZE, sizeof(int)*BLOCKSIZE);
 
     int i, j;
     if(MYTHREAD == 0){
@@ -46,6 +46,40 @@ int main(){
 
     upc_barrier;
 
+	// write to own block column-by-column
+	int *local_T = (int*)&T[BLOCKSIZE*MYTHREAD];
+
+	for(j=0; j<M; j++){
+		for(i=0; i<BLOCKSIZE; i++)
+			local_T[i] = MYTHREAD + 100;
+
+		local_T += no_elements;					
+	}
+	
+	upc_barrier;
+
+    if(MYTHREAD == 0){
+		printf("\n");
+		printf("matrix of size %dx%d write thread ID + 100 to your own elements\n",N_padded+1, M);
+ 	
+		printf("      ");
+		for(j = 0; j < M; j++)
+			printf("%3d ",j);
+		printf("\n");
+		printf("      ");
+		for(j = 0; j < M; j++)
+            printf("----");
+		printf("\n");
+        for(i = 0; i<=N_padded; i++){
+			printf("%3d | ",i);
+        	for(j = 0; j<M; j++)
+                printf("%3d ", T[i+j*(N_padded+1)]);
+
+			printf("\n");
+		}
+	}
+
+    upc_barrier;
     return 0;
 }
 

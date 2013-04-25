@@ -5,7 +5,7 @@
 #include <stdio.h>
 
 #define N 10
-#define BLOCKSIZE ((N+1)/THREADS + 1)
+#define BLOCKSIZE (N/THREADS + 1)
 
 int main(){
     
@@ -14,12 +14,12 @@ int main(){
 	// number of columns
     int M = 20;
 	// number of rows processed by each thread
-	int no_elements = (N+1)/THREADS + 1;
+	//int no_elements = (N+1)/THREADS + 1;
 	// pad number of rows so that each thread processes the same number of rows
-    int N_padded = no_elements * THREADS - 1;
+    int N_padded = BLOCKSIZE * THREADS - 1;
     
     if(MYTHREAD == 0)
-        printf("N %d, no_elements %d, N_padded %d\n", N, no_elements, N_padded);
+        printf("N %d, no_elements %d, N_padded %d\n", N, BLOCKSIZE, N_padded);
 
 	shared [BLOCKSIZE] int* T  = (shared [BLOCKSIZE] int*) upc_all_alloc( M*(N_padded+1)/BLOCKSIZE, sizeof(int)*BLOCKSIZE);
 
@@ -53,7 +53,7 @@ int main(){
 		for(i=0; i<BLOCKSIZE; i++)
 			local_T[i] = MYTHREAD + 100;
 
-		local_T += no_elements;					
+		local_T += BLOCKSIZE;					
 	}
 	
 	upc_barrier;
